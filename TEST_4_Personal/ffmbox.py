@@ -4,6 +4,12 @@ from tkinter import filedialog, messagebox
 import ffmpeg
 import subprocess
 
+# v1.1开发中 问题，当使用H264转码，遇到：程序显示未响应 但是转码仍在进行，长时间等待后会提示成功
+# 解决显示未响应的情况，并加一个进度条
+#   这通常是因为长时间运行的任务阻塞了主线程。在Tkinter中，主线程负责处理GUI事件，
+#   如果有一个耗时的任务在主线程中运行，比如调用subprocess运行ffmpeg，那么主线程就会被阻塞，
+#   无法更新界面，导致界面冻结，显示“未响应”。
+
 def select_file():
     """选择要转换的视频文件"""  # 只是代码阅读的时候作为提示
     file_path = filedialog.askopenfilename(filetypes=[("视频文件", "*.mp4;*.avi;*.mov;*.mkv")])
@@ -40,7 +46,7 @@ def convert_video():
 
     # 创建ffmpeg命令
     command = [
-        'ffmpeg', '-i', input_file, '-c', target_parameter,  
+        'ffmpeg', '-i', input_file, '-c:v', target_parameter,  
         output_file
     ] # command是一个列表变量
 
