@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk  # 导入ttk模块
 from tkinter import filedialog, messagebox
 import ffmpeg
+import subprocess
 
 def select_file():
     """选择要转换的视频文件"""
@@ -18,7 +19,7 @@ def select_output_directory():
         entry_output_dir.insert(0, directory)
 
 def convert_video():
-    """调用ffmpeg进行视频格式转换"""
+    """调用ffmpeg进行视频格式转换，使用-copy参数快速转换，并显示进度"""
     input_file = entry_file_path.get()
     output_dir = entry_output_dir.get()
     target_format = combo_format.get()
@@ -34,11 +35,34 @@ def convert_video():
     # 构建输出文件路径
     output_file = f"{output_dir}/{file_name}_converted.{target_format}"
 
+    # 创建ffmpeg命令
+    command = [
+        'ffmpeg', '-i', input_file, '-c', 'copy',  # 使用-copy参数
+        output_file
+    ]
+
     try:
-        # 调用ffmpeg进行格式转换
-        ffmpeg.input(input_file).output(output_file).run()
+        # 启动子进程，执行ffmpeg命令并显示进度条
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # 处理ffmpeg的输出
+        for line in process.stderr:
+            # 查找进度信息
+            if b'frame=' in line:
+                output_line = line.decode('utf-8')
+                # 提取进度信息
+                if 'time=' in output_line:
+                    time_info = output_line.split('time=')[1].split(' ')[0]
+                    # 计算转换进度
+                    progress = f"正在转换... 当前时间: {time_info}"
+                    label_progress.config(text=progress)
+                    root.update_idletasks()
+
+        process.communicate()
+
         messagebox.showinfo("成功", f"视频转换成功！输出文件：{output_file}")
-    except ffmpeg.Error as e:
+        label_progress.config(text="转换完成！")
+    except Exception as e:
         messagebox.showerror("错误", f"视频转换失败：{str(e)}")
 
 # 创建主窗口
@@ -78,6 +102,10 @@ label_mode.grid(row=3, column=0, padx=10, pady=10)
 
 combo_mode = ttk.Combobox(root, values=["普通转换", "高级设置"])  # 使用ttk.Combobox
 combo_mode.grid(row=3, column=1, padx=10, pady=10)
+
+# 显示进度信息
+label_progress = tk.Label(root, text="等待转换...")
+label_progress.grid(row=5, column=0, columnspan=3, pady=10)
 
 # 转换按钮
 btn_convert = tk.Button(root, text="开始转换", command=convert_video)
