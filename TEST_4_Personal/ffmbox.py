@@ -5,6 +5,9 @@ import subprocess
 import threading
 import queue
 
+fps = ""
+selected = ""
+#######################################  后端
 def time_to_seconds(time_str):
     """将时间字符串转换为秒数"""
     h, m, s = time_str.split(':')
@@ -101,12 +104,27 @@ def select_output_directory():
         entry_output_dir.delete(0, tk.END)
         entry_output_dir.insert(0, directory)
 
+def on_combobox_change(event):
+    global fps
+    global selected
+    selected = combo_fps.get()
+    if selected == "自定义":
+        entry_frame.grid(row=5, column=1, padx=5, pady=5)  # 显示输入框
+        fps = fps_entry.get()
+    else:
+        entry_frame.grid_forget()      # 隐藏输入框
+        fps = ""
+
+combo_fps.bind("<<ComboboxSelected>>", on_combobox_change)
+
 def convert_video():
     """启动转换线程"""
+
     input_file = entry_file_path.get()
     output_dir = entry_output_dir.get()
     target_format = combo_format.get()
     target_parameter = combo_parameter.get()
+    
 
     if not input_file or not output_dir or not target_format:
         messagebox.showerror("错误", "请填写所有必填项！")
@@ -121,6 +139,7 @@ def convert_video():
         'ffmpeg',
         '-i', input_file,
         '-c:v', target_parameter,
+        '-r',fps,
         output_file
     ]
 
@@ -141,43 +160,59 @@ def convert_video():
     # 启动进度更新循环
     root.after(100, update_progress, progress_queue, thread)
 
+
+######################  前端
 # 创建主窗口
 root = tk.Tk()
 root.title("视频格式转换器 v1.2")
 
 # 文件选择组件
-tk.Label(root, text="选择视频文件:").grid(row=0, column=0, padx=10, pady=5)
+ttk.Label(root, text="选择视频文件:").grid(row=0, column=0, padx=10, pady=5)
 entry_file_path = tk.Entry(root, width=40)
 entry_file_path.grid(row=0, column=1, padx=5, pady=5)
-tk.Button(root, text="浏览", command=select_file).grid(row=0, column=2, padx=5, pady=5)
+ttk.Button(root, text="浏览", command=select_file).grid(row=0, column=2, padx=5, pady=5)
 
 # 输出目录组件
 tk.Label(root, text="输出目录:").grid(row=1, column=0, padx=10, pady=5)
 entry_output_dir = tk.Entry(root, width=40)
 entry_output_dir.grid(row=1, column=1, padx=5, pady=5)
-tk.Button(root, text="浏览", command=select_output_directory).grid(row=1, column=2, padx=5, pady=5)
+ttk.Button(root, text="浏览", command=select_output_directory).grid(row=1, column=2, padx=5, pady=5)
 
 # 格式选择组件
-tk.Label(root, text="目标格式:").grid(row=2, column=0, padx=10, pady=5)
+ttk.Label(root, text="目标格式:").grid(row=2, column=0, padx=10, pady=5)
 combo_format = ttk.Combobox(root, values=["mp4", "avi", "mov", "mkv"], width=15)
 combo_format.grid(row=2, column=1, padx=5, pady=5)
 combo_format.current(0)
 
 # 编码参数组件
-tk.Label(root, text="编码参数:").grid(row=3, column=0, padx=10, pady=5)
+ttk.Label(root, text="编码参数:").grid(row=3, column=0, padx=10, pady=5)
 combo_parameter = ttk.Combobox(root, values=["copy", "libx264", "libx265"], width=15)
 combo_parameter.grid(row=3, column=1, padx=5, pady=5)
 combo_parameter.current(0)
 
+# 帧率控制参数
+ttk.Label(root, text="帧率参数:").grid(row=4, column=0, padx=10, pady=5)
+combo_fps = ttk.Combobox(root, values=["默认帧率", "自定义"])
+combo_fps.grid(row=4, column=1, padx=5, pady=5)
+combo_fps.current(0)
+
+# 包裹输入框的Frame
+entry_frame = tk.Frame(root)
+fps_label = tk.Label(entry_frame, text="输入帧率:")
+fps_label.grid(row=9, column=1, padx=5, pady=5)
+fps_entry = tk.Entry(entry_frame)
+fps_entry.grid(row=10, column=1, padx=5, pady=5)
+
+
 # 进度条组件
 progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate")
-progress_bar.grid(row=4, column=0, columnspan=3, padx=10, pady=10)
-label_progress = tk.Label(root, text="等待开始转换")
-label_progress.grid(row=5, column=0, columnspan=3)
+progress_bar.grid(row=5, column=0, columnspan=3, padx=10, pady=10)
+label_progress = ttk.Label(root, text="等待开始转换")
+label_progress.grid(row=6, column=0, columnspan=3)
 
 # 转换按钮
-btn_convert = tk.Button(root, text="开始转换", command=convert_video)
-btn_convert.grid(row=6, column=1, pady=10)
+btn_convert = ttk.Button(root, text="开始转换", command=convert_video)
+btn_convert.grid(row=7, column=1, pady=10)
 
 # 启动主循环
 root.mainloop()
