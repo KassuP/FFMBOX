@@ -7,7 +7,8 @@ import queue
 
 fps = ""
 selected = ""
-#######################################  后端
+
+####################################### 后端
 def time_to_seconds(time_str):
     """将时间字符串转换为秒数"""
     h, m, s = time_str.split(':')
@@ -61,7 +62,7 @@ def run_conversion(command, progress_queue):
             progress_queue.put(('success', '视频转换成功！'))
         else:
             progress_queue.put(('error', f'转换失败，错误码：{process.returncode}'))
-            
+                
     except Exception as e:
         progress_queue.put(('error', f'转换异常：{str(e)}'))
 
@@ -115,16 +116,23 @@ def on_combobox_change(event):
         entry_frame.grid_forget()      # 隐藏输入框
         fps = ""
 
-combo_fps.bind("<<ComboboxSelected>>", on_combobox_change)
-
 def convert_video():
     """启动转换线程"""
+    global fps
 
     input_file = entry_file_path.get()
     output_dir = entry_output_dir.get()
     target_format = combo_format.get()
     target_parameter = combo_parameter.get()
     
+    # 获取帧率设置
+    if combo_fps.get() == "自定义":
+        fps = fps_entry.get()
+        if not fps.isdigit():
+            messagebox.showerror("错误", "请输入有效的帧率数值！")
+            return
+    else:
+        fps = ""  # 默认不指定帧率参数
 
     if not input_file or not output_dir or not target_format:
         messagebox.showerror("错误", "请填写所有必填项！")
@@ -135,13 +143,10 @@ def convert_video():
     output_file = f"{output_dir}/{file_name}_converted.{target_format}"
 
     # 创建ffmpeg命令
-    command = [
-        'ffmpeg',
-        '-i', input_file,
-        '-c:v', target_parameter,
-        '-r',fps,
-        output_file
-    ]
+    command = ['ffmpeg', '-i', input_file]
+    if fps:  # 如果指定了帧率参数
+        command.extend(['-r', fps])
+    command.extend(['-c:v', target_parameter, output_file])
 
     # 初始化进度条
     progress_bar['value'] = 0
@@ -161,7 +166,7 @@ def convert_video():
     root.after(100, update_progress, progress_queue, thread)
 
 
-######################  前端
+##################################################################### 前端
 # 创建主窗口
 root = tk.Tk()
 root.title("视频格式转换器 v1.2")
@@ -173,7 +178,7 @@ entry_file_path.grid(row=0, column=1, padx=5, pady=5)
 ttk.Button(root, text="浏览", command=select_file).grid(row=0, column=2, padx=5, pady=5)
 
 # 输出目录组件
-tk.Label(root, text="输出目录:").grid(row=1, column=0, padx=10, pady=5)
+ttk.Label(root, text="输出目录:").grid(row=1, column=0, padx=10, pady=5)
 entry_output_dir = tk.Entry(root, width=40)
 entry_output_dir.grid(row=1, column=1, padx=5, pady=5)
 ttk.Button(root, text="浏览", command=select_output_directory).grid(row=1, column=2, padx=5, pady=5)
@@ -192,27 +197,31 @@ combo_parameter.current(0)
 
 # 帧率控制参数
 ttk.Label(root, text="帧率参数:").grid(row=4, column=0, padx=10, pady=5)
-combo_fps = ttk.Combobox(root, values=["默认帧率", "自定义"])
+combo_fps = ttk.Combobox(root, values=["默认帧率", "自定义"], width=15)
 combo_fps.grid(row=4, column=1, padx=5, pady=5)
 combo_fps.current(0)
+combo_fps.bind("<<ComboboxSelected>>", on_combobox_change)
 
-# 包裹输入框的Frame
+# 自定义帧率输入框
 entry_frame = tk.Frame(root)
-fps_label = tk.Label(entry_frame, text="输入帧率:")
-fps_label.grid(row=9, column=1, padx=5, pady=5)
-fps_entry = tk.Entry(entry_frame)
-fps_entry.grid(row=10, column=1, padx=5, pady=5)
+fps_label = ttk.Label(entry_frame, text="输入帧率:")
+fps_label.grid(row=0, column=0, padx=5, pady=5,sticky="w")
+fps_entry = ttk.Entry(entry_frame, width=15)
+fps_entry.grid(row=0, column=1, padx=5, pady=5)
+entry_frame.grid(row=5, column=1, padx=5, pady=5)
+entry_frame.grid_remove()  # 初始时隐藏
 
+# mkv字幕提取
 
 # 进度条组件
 progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate")
-progress_bar.grid(row=5, column=0, columnspan=3, padx=10, pady=10)
+progress_bar.grid(row=6, column=0, columnspan=3, padx=10, pady=10)
 label_progress = ttk.Label(root, text="等待开始转换")
-label_progress.grid(row=6, column=0, columnspan=3)
+label_progress.grid(row=7, column=0, columnspan=3)
 
 # 转换按钮
 btn_convert = ttk.Button(root, text="开始转换", command=convert_video)
-btn_convert.grid(row=7, column=1, pady=10)
+btn_convert.grid(row=8, column=1, pady=10)
 
 # 启动主循环
 root.mainloop()
