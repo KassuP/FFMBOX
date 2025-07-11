@@ -62,7 +62,7 @@ def run_conversion(command, progress_queue):
             progress_queue.put(('success', '视频转换成功！'))
         else:
             progress_queue.put(('error', f'转换失败，错误码：{process.returncode}'))
-                
+                               
     except Exception as e:
         progress_queue.put(('error', f'转换异常：{str(e)}'))
 
@@ -146,7 +146,7 @@ def convert_video():
     command = ['ffmpeg', '-i', input_file]
     if fps:  # 如果指定了帧率参数
         command.extend(['-r', fps])
-    command.extend(['-c:v', target_parameter, output_file])
+    command.extend(['-c', target_parameter, output_file])
 
     # 初始化进度条
     progress_bar['value'] = 0

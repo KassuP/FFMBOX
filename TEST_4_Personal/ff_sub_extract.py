@@ -94,7 +94,7 @@ ttk.Button(root,text="浏览",command=select_output_directoty).grid(row=1,column
 
 # 格式选择组件
 ttk.Label(root,text="目标格式:").grid(row=2,column=0,padx=10,pady=5)
-combo_format = ttk.Combobox(root,values=["srt","txt"],width=15)  # combo_format内容 是一个抽屉  如果其他地方需要使用这里的值，那么就给他一个函数名。不需要的话不设置也可以
+combo_format = ttk.Combobox(root,values=["ass","srt","txt"],width=15)  # combo_format内容 是一个抽屉  如果其他地方需要使用这里的值，那么就给他一个函数名。不需要的话不设置也可以
 combo_format.grid(row=2,column=1,padx=5,pady=5)  # 抽屉 combo_format 显示的位置
 combo_format.current(0) # 将下拉框的默认选项设置为第一个（索引从0开始）
 
